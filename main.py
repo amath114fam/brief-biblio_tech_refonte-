@@ -3,6 +3,9 @@ from livre import Livre
 from magazine import Magazine
 from adherant import Adherant
 
+
+
+
 class Menu:
     def __init__(self):
         self.bibliothécaire = Bibliothecaire()
@@ -12,17 +15,14 @@ class Menu:
             print("=================================")
             print("GESTION BIBLIOTHÈQUE")
             print("=================================")
-            print("1. Ajouter un Livre")
-            print("2. Ajouter un magazine")
-            print("3. Inscrire un membre")
-            print("4. Trouver un document")
-            print("5. Trouver un adhérent")
-            print("6. Valider un prêt")
-            print("7. Lister les emprunts")
-            print("8. Retourner un livre")
-            print("9. liste des livres")
-            print("10. liste des magazines")
-            print("11. Quitter")
+            print("1. Ajouter un document")
+            print("2. Ajouter un adherant")
+            print("3. Trouver un document")
+            print("4. Trouver un adhérent")
+            print("5. Emprunter un document")
+            print("6. Retourner un document")
+            print("7. Listes emprunts")
+            print("0. Quitter")
             print("-----------------------------------")
 
             choix = input("Choisis un numéro : ")
@@ -33,44 +33,35 @@ class Menu:
                         titre = input("Titre : ").strip()
                         auteur = input("Auteur : ").strip()
                         type_l = input("Type : ").strip()
-                        livre = Livre(titre, auteur, type_l)
-                        self.bibliothécaire.ajouter_livre(livre)
+                        livre = Livre(titre, auteur)
+                        self.bibliothécaire.ajouter_document(livre, type_l)
                     case "2":
-                        titre = input("Titre : ").strip()
-                        auteur = input("Auteur : ").strip()
-                        type_m = input("Type : ").strip()
-                        magazine = Magazine(titre, auteur, type_m)
-                        self.bibliothécaire.ajouter_magazine(magazine)
+                        nom = input("Nom : ")
+                        membr = Adherant(nom)
+                        self.bibliothécaire.ajout_adherant(membr)
                     case "3":
-                        nom = input("Nom : ").strip()
-                        membre = Adherant(nom)
-                        self.bibliothécaire.inscrire_membre(membre)
-                    case "4":
                         titre = input("Titre : ").strip()
+                        type_doc = input("Type : ").strip()
                         print("*" * 10)
-                        livree = self.bibliothécaire.trouver_livre(titre)
-                        print(f"Livre : {livree.titre}")
-
+                        self.bibliothécaire.trouver_document(titre, type_doc)
+                        # print(f"Livre : {livree.titre}")
+                    case "4":
+                        nom = input("Nom : ").strip()
+                        self.bibliothécaire.trouver_membre(nom)
                     case "5":
-                        nom = input("Nom : ").strip()
-                        membree = self.bibliothécaire.trouver_membre(nom)
-                        print("*" * 10)
-                        print(f"Membre : {membree.nom}")
-                    case "6":
                         nom_membre = input("Nom membre : ").strip()
-                        titre_livre = input("Titre livre : ").strip()
-                        self.bibliothécaire.valider_pret(nom_membre, titre_livre)
+                        titre = input("Titre : ").strip()
+                        type_document = input("Type : ").strip()
+                        self.bibliothécaire.emprunter_document(nom_membre, titre, type_document)
+
+                    case "6":
+                        titre = input("Titre : ").strip()
+                        type_d = input("Type_d : ").strip()
+                        self.bibliothécaire.retourner_document(titre, type_d)
+                        print("*" * 10)
+                        # print(f"Membre : {membree.nom}")
                     case "7":
-                        nom = input("Nom : ").strip()
-                        membre = self.bibliothécaire.trouver_membre(nom)
-                        membre.listes_emprunt()
-                    case "8":
-                        titrelivre = input("Titre livre : ").strip()
-                        self.bibliothécaire.retourner_livre(titrelivre)
-                    case "9":
-                        self.bibliothécaire.listes_livres()
-                    case "10":
-                        self.bibliothécaire.listes_magazines()
+                        self.bibliothécaire.liste_emprunt()
                     case _:
                         exit()
             except Exception as e:

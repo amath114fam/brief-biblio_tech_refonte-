@@ -1,4 +1,4 @@
-
+from db import get_connexion
 
 class Adherant:
     def __init__(self, nom):
@@ -11,3 +11,4 @@ class Adherant:
         else:
             for element in self.liste_emprunt:
                 print(f"Nom : {element["membre"]} | Document : {element["titre"]} | {element["types"]}")
+

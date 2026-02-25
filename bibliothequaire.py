@@ -1,82 +1,174 @@
-
+from db import get_connexion
 
 
 class Bibliothecaire:
-    def __init__(self):
-        self.liste_livre = []
-        self.liste_membre = []
+    def ajout_adherant(self, adherant):
+        connection = get_connexion()
+        cursor = connection.cursor()
+        query = "INSERT INTO adherant (nom) VALUES (%s)"
+        cursor.execute(query, (adherant.nom,))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print(f"{adherant.nom} a été ajouté avec succès")
 
-    def ajouter_livre(self, Livre):
-        self.liste_livre.append(Livre)
-        print("*" * 10)
-        print("Livre ajouté avec succès")
+    def ajouter_document(self, document, type_doc):
+        """Ajoute un livre OU un magazine — une seule méthode."""
+        if type_doc not in ("livre", "magazine"):
+            raise ValueError("type_doc doit être 'livre' ou 'magazine'")
 
-    def ajouter_magazine(self, magazine):
-        self.liste_livre.append(magazine)
-        print("*" * 10)
-        print("Magazine ajouté avec succès")
+        connection = get_connexion()
+        cursor = connection.cursor()
+        query = f"INSERT INTO {type_doc} (titre, auteur, disponible) VALUES (%s, %s, %s)"
+        cursor.execute(query, (document.titre, document.auteur, True))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print(f"Le {document.titre} de {document.auteur} a été ajouté")
 
-    def trouver_livre(self, titre):
-        for livre in self.liste_livre:
-            if livre.titre.lower() == titre.lower():
-                return livre
-        raise ValueError("Livre introuvable")
+    # ─────────────────────────────────────────
+    # RECHERCHE
+    # ─────────────────────────────────────────
 
+    def trouver_document(self, titre, type_doc):
+        """
+        Cherche un livre OU un magazine par titre.
+        Retourne un dict {"titre": ..., "id": ..., "disponible": ...} ou None.
+        """
+        if type_doc.lower() not in ("livre", "magazine"):
+            raise ValueError("type_doc doit être 'livre' ou 'magazine'")
 
-    def inscrire_membre(self, Adherant):
-        self.liste_membre.append(Adherant)
-        print("*" * 10)
-        print("Membre inscrit avec succès")
-    
+        connection = get_connexion()
+        cursor = connection.cursor()
+        try:
+            query = f"SELECT id, titre, disponible FROM {type_doc} WHERE LOWER(titre) = %s"
+            cursor.execute(query, (titre.lower(),))
+            row = cursor.fetchone()
+            if row is None:
+                print(f"Ce {type_doc} n'existe pas")
+                return None
+            id_doc, titre_doc, disponible = row
+            print(f"Livre : {titre_doc}")
+            return {"id": id_doc, "titre": titre_doc, "disponible": disponible}
+        except Exception as e:
+            print(f"Erreur lors de la recherche : {e}")
+            return None
+        finally:
+            cursor.close()
+            connection.close()
+
     def trouver_membre(self, nom):
-        if not nom.isalpha():
-            raise ValueError("Format incorrect")
-        for membre in self.liste_membre:
-            if membre.nom.lower() == nom.lower():
-                return membre
-        raise ValueError("Membre introuvable")
+        """Retourne un dict {"id": ..., "nom": ...} ou None."""
+        connection = get_connexion()
+        cursor = connection.cursor()
+        try:
+            query = "SELECT id, nom FROM adherant WHERE LOWER(nom) = %s"
+            cursor.execute(query, (nom.lower(),))
+            row = cursor.fetchone()
+            if row is None:
+                print("Ce membre n'existe pas")
+                return None
+            id_membre, nom_membre = row
+            return {"id": id_membre, "nom": nom_membre}
+        except Exception as e:
+            print(f"Erreur lors de la recherche : {e}")
+            return None
+        finally:
+            cursor.close()
+            connection.close()
+
+    def emprunter_document(self, nom_membre, titre, type_doc):
         
+        if not titre or not titre.strip():
+            raise ValueError("Le titre ne peut pas être vide")
+        if not nom_membre or not nom_membre.strip():
+            raise ValueError("Le nom du membre ne peut pas être vide")
+        if type_doc.lower() not in ("livre", "magazine"):
+            raise ValueError("type_doc doit être 'livre' ou 'magazine'")
+
+        # 2. Récupérer le document et le membre
+        document = self.trouver_document(titre, type_doc)
+        membre   = self.trouver_membre(nom_membre)
+
+        if document is None:
+            raise ValueError(f"Le {type_doc} '{titre}' est introuvable")
+        if membre is None:
+            raise ValueError(f"Le membre '{nom_membre}' est introuvable")
+
+        # 3. Vérifier la disponibilité
+        if not document["disponible"]:
+            raise ValueError(f"Le {type_doc} '{titre}' est déjà emprunté")
+
+        # 4. Mettre à jour disponible → False + enregistrer l'emprunt
+        connection = get_connexion()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            f"UPDATE {type_doc} SET disponible = %s WHERE id = %s",
+            (False, document["id"])
+        )
+        cursor.execute(
+            "INSERT INTO emprunt (document_id, type_document, adherant_id) VALUES (%s, %s, %s)",
+            (document["id"], type_doc, membre["id"])
+        )
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        print(f"{document['titre']} a été prêté à {membre['nom']} avec succès")
+
+
+    def retourner_document(self, titre, type_doc):
+       
+        if not titre or not titre.strip():
+            raise ValueError("Le titre ne peut pas être vide")
+        if type_doc not in ("livre", "magazine"):
+            raise ValueError("type_doc doit être 'livre' ou 'magazine'")
+
+        document = self.trouver_document(titre, type_doc)
+        if document is None:
+            raise ValueError(f"Le {type_doc} '{titre}' est introuvable")
+
+        if document["disponible"]:
+            raise ValueError(f"Le {type_doc} '{titre}' est déjà disponible")
+
+        connection = get_connexion()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            f"UPDATE {type_doc} SET disponible = %s WHERE id = %s",
+            (True, document["id"])
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        print(f"{document['titre']}' a été retourné avec succès")
+
+    def liste_emprunt(self):
+        connection = get_connexion()
+        cursor = connection.cursor()
     
-    def valider_pret(self, nom_membre, titre_livre):
-        if titre_livre == "":
-            raise ValueError("Format incorrect")
-        
-        if nom_membre == "":
-            raise ValueError("Format incorrect")
-        
-        livre = self.trouver_livre(titre_livre)
-        membre = self.trouver_membre(nom_membre)
-        livre.emprunter()
-        dic = {
-            "titre" : livre.titre,
-            "membre" : membre.nom,
-            "types"  : livre.types
-        }
-        membre.liste_emprunt.append(dic)
-        print(f"Le livre {dic['titre']} a été prếté à {dic["membre"]} avec succès")
+        query = """
+            SELECT
+                a.nom,
+                COALESCE(l.titre, m.titre) AS titre,
+                COALESCE(l.auteur, m.auteur) AS auteur,
+                e.type_document
+            FROM emprunt e
+            JOIN adherant a ON e.adherant_id = a.id
+            LEFT JOIN livre l 
+                ON e.document_id = l.id AND e.type_document = 'livre'
+            LEFT JOIN magazine m 
+                ON e.document_id = m.id AND e.type_document = 'magazine'
+        """
 
-    def retourner_livre(self, titre):
-        livre = self.trouver_livre(titre)
-        livre.retourner()
-        print("Document retourné")
+        cursor.execute(query)
+        rows = cursor.fetchall()
 
-    def listes_livres(self):
-        livres_trouves = False
-        for doc in self.liste_livre:
-            if doc.types.lower() == "livre":
-                print(f"Livre : {doc.titre} | Auteur : {doc.auteur}")
-                livres_trouves = True
+        for nom, titre, auteur, type_doc in rows:
+            print(f"{nom} a emprunté {type_doc} : {titre} de {auteur}")
 
-        if not livres_trouves:
-            print("Pas de livre disponible")
-    
-    def listes_magazines(self):
-        livres_trouves = False
-        for doc in self.liste_livre:
-            if doc.types.lower() == "magazine":
-                print(f"Magazine : {doc.titre} | Auteur : {doc.auteur}")
-                livres_trouves = True
-                
-        if not livres_trouves:
-            print("Pas de Magazine disponible")
-
+        cursor.close()
+        connection.close()
