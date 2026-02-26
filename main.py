@@ -2,6 +2,8 @@ from bibliothequaire import Bibliothecaire
 from livre import Livre
 from magazine import Magazine
 from adherant import Adherant
+from auth import create_user
+from login import logine
 
 
 
@@ -75,9 +77,38 @@ class Menu:
             except Exception as e:
                 print(f"Erreur : {e}")
 
-menu = Menu()
-menu.lancer()
+# menu = Menu()
+# menu.lancer()
+def accueil():
+    print("=================================")
+    print("Bienvenu")
+    print("=================================")
+    print("1. S'incrire")
+    print("2. Se connecter")
+    print("0. Quitter")
+    choix = input("Choisis un numéro : ")
+    print("*" * 10)
+    continuer = True
+    while continuer:
+        try:
+            match choix:
+                case "1":
+                    create_user()
+                case "2":
+                    responsable = logine()
+                    if responsable:
+                        menu = Menu()
+                        menu.lancer()
+                    else:
+                        raise ValueError("Ce compte n'existe pas")
+                case _:
+                    print("Erreur de saisie")
+                    exit()
+        except Exception as e:
+            print(f"Erreur : {e}")
 
+accueil()
+        
 
 
                 
