@@ -23,6 +23,7 @@ class Menu:
             print("6. Retourner un document")
             print("7. Listes emprunts")
             print("8. Listes des emprunts d'un membre")
+            print("9. Afficher Catalogue")
             print("0. Quitter")
             print("-----------------------------------")
 
@@ -67,6 +68,8 @@ class Menu:
                         self.bibliothécaire.liste_membre()
                         id_adherant = input("Entrer l'Id de l'adherant : ")
                         self.bibliothécaire.emprunt_membre(id_adherant)
+                    case "9":
+                        self.bibliothécaire.afficher_catalogue()
                     case _:
                         exit()
             except Exception as e:

@@ -195,3 +195,16 @@ class Bibliothecaire:
         rows = cursor.fetchall()
         for row in rows:
             print(f"Nom : {row[0]} - Titre : {row[1]} - Auteur : {row[2]} - Type : {row[3]}")
+    def afficher_catalogue(self):
+        connection = get_connexion()
+        cursor = connection.cursor()
+        query = """
+           select titre, auteur, 'livre' AS type_document FROM livre
+           UNION ALL
+           select titre, auteur, 'magazine' AS type_document FROM magazine
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        for row in rows:
+            print(f"Auteur : {row[0]}  Titre : {row[1]}  Type : {row[2]}")
+        
