@@ -22,6 +22,7 @@ class Menu:
             print("5. Emprunter un document")
             print("6. Retourner un document")
             print("7. Listes emprunts")
+            print("8. Listes des emprunts d'un membre")
             print("0. Quitter")
             print("-----------------------------------")
 
@@ -62,6 +63,10 @@ class Menu:
                         # print(f"Membre : {membree.nom}")
                     case "7":
                         self.bibliothécaire.liste_emprunt()
+                    case "8":
+                        self.bibliothécaire.liste_membre()
+                        id_adherant = input("Entrer l'Id de l'adherant : ")
+                        self.bibliothécaire.emprunt_membre(id_adherant)
                     case _:
                         exit()
             except Exception as e:
